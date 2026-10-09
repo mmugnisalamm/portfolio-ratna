@@ -1,0 +1,23 @@
+# Berkas ini kembar dengan .gitignore di akar proyek, dan itu disengaja.
+# Kalau yang didorong ke repo hanya isi folder web/ ini (lihat bentuk B di
+# netlify.toml), .gitignore akar tidak ikut terbawa — dan polanya pun tidak
+# akan cocok, karena di sana tertulis "web/dist/" sementara di repo seperti
+# itu jalurnya cuma "dist/".
+
+dist/
+node_modules/
+
+# Berkas sementara
+*.log
+.DS_Store
+Thumbs.db
+
+# ---- Kenapa skrip pembangun TIDAK tinggal di folder bernama "build/" ----
+# Dulu begitu, dan folder itu tidak pernah sampai ke repo: "build" termasuk
+# yang diabaikan secara bawaan oleh banyak templat .gitignore dan perkakas
+# git, karena di hampir seluruh ekosistem nama itu berarti HASIL pembangunan
+# — sesuatu yang memang tidak pantas dikomit. Menaruh skrip SUMBER di sana
+# adalah salah nama, dan gejalanya menyesatkan: Netlify cuma berkata
+# "Cannot find module", seolah-olah kodenya yang rusak.
+#
+# Sekarang namanya skrip/. Jangan dikembalikan ke build/.

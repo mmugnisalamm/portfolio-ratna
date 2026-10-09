@@ -1,0 +1,13 @@
+{
+  "name": "portofolio-copywriting",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Situs portofolio copywriting — HTML statis hasil prerender dari CMS Apps Script",
+  "scripts": {
+    "build": "node skrip/build.mjs",
+    "preview": "node skrip/build.mjs && node skrip/serve.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,109 @@
+# ==================================================================
+# netlify.toml — Konfigurasi hosting
+# ------------------------------------------------------------------
+# Berkas ini SENGAJA tidak memuat kunci `base`, dan itu bukan kelalaian.
+#
+# Ada dua bentuk repo yang sama-sama masuk akal untuk proyek ini:
+#
+#   A. Akar repo = folder proyek (apps-script/ + web/ + uji/)
+#      Isi "Base directory: web" di dasbor Netlify. Netlify lalu membaca
+#      berkas ini dari dalam web/, dan menjalankan perintah di bawah dari
+#      sana. Publish "dist" dihitung relatif terhadap base, jadi hasilnya
+#      web/dist. Tidak ada yang perlu ditulis di sini.
+#
+#   B. Akar repo = isi folder web/ ini saja
+#      Kosongkan "Base directory" di dasbor. Perintah dan publish di bawah
+#      langsung benar apa adanya.
+#
+# Menulis `base = "web"` di sini akan MERUSAK bentuk B: berkas ini ikut
+# terbawa ke akar repo, lalu menyuruh Netlify masuk ke web/ yang di sana
+# tidak ada — "Base directory does not exist". Di bentuk A kunci itu pun
+# cuma mengulang apa yang sudah diisi di dasbor. Jadi tempatnya memang
+# bukan di sini; biarkan dasbor yang menentukan.
+#
+#   Build command      : npm run build
+#   Publish directory  : dist   (bentuk B)  /  web/dist  (bentuk A)
+# ==================================================================
+
+[build]
+  # Perintahnya memeriksa kelengkapan berkas dulu, baru membangun.
+  #
+  # Tanpa ini, berkas yang tidak ikut terunggah muncul sebagai
+  # "Cannot find module ..." — pesan yang menyalahkan Node, padahal yang
+  # salah adalah isi repo. Pemeriksa di bawah menyebut nama berkasnya dan
+  # menunjukkan apa yang benar-benar sampai, jadi sekali lihat log sudah
+  # ketahuan. Ia diam saja kalau semuanya lengkap.
+  #
+  # Catatan sejarah: skrip pembangun dulu tinggal di folder "build/", dan
+  # folder itu tidak pernah sampai ke repo — "build" ada di daftar abaikan
+  # bawaan banyak perkakas, karena di hampir seluruh ekosistem nama itu
+  # berarti HASIL pembangunan, bukan sumbernya. Sekarang namanya "skrip/".
+  command = '''
+kurang=0
+for f in package.json config.js skrip/build.mjs assets/js/render.js assets/js/app.js assets/css/style.css; do
+  if [ ! -f "$f" ]; then echo "  HILANG : $f"; kurang=1; fi
+done
+if [ "$kurang" = "1" ]; then
+  echo ""
+  echo "Berkas di atas tidak ikut terunggah. Yang benar-benar sampai:"
+  find . -maxdepth 2 -not -path "./node_modules/*" -not -path "./.git/*" | sort | sed "s|^|    |"
+  echo ""
+  echo "Unggah ulang yang hilang, lalu deploy lagi."
+  exit 1
+fi
+npm run build
+'''
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# ---- Pengalihan ----------------------------------------------------
+# Alamat tanpa garis miring penutup dialihkan ke versi bergaris miring.
+# Tanpa ini, /karya/nama dan /karya/nama/ jadi dua alamat untuk satu
+# halaman — dan mesin pencari memperlakukannya sebagai isi ganda.
+[[redirects]]
+  from = "/karya/:slug"
+  to = "/karya/:slug/"
+  status = 301
+
+[[redirects]]
+  from = "/kategori/:slug"
+  to = "/kategori/:slug/"
+  status = 301
+
+[[redirects]]
+  from = "/about"
+  to = "/about/"
+  status = 301
+
+# ---- Header --------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Pratinjau di CMS memuat situs ini di dalam <iframe> dari
+    # script.google.com, jadi membingkainya TIDAK boleh dilarang
+    # sepenuhnya. frame-ancestors dibatasi ke Google dan situs ini
+    # sendiri: cukup untuk mencegah pembingkaian oleh sembarang pihak,
+    # tapi tetap membiarkan jendela pratinjau bekerja.
+    Content-Security-Policy = "frame-ancestors 'self' https://script.google.com https://*.googleusercontent.com"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    # Aset dibangun ulang setiap kali situs diterbitkan, dan namanya tidak
+    # mengandung sidik jari isinya. Jadi cache-nya pendek: satu jam cukup
+    # untuk kunjungan berulang, dan tidak membuat perubahan CSS tertahan
+    # berhari-hari di browser pengunjung yang sudah pernah datang.
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    # HTML selalu diperiksa ulang. Inilah yang membuat tombol Terbitkan
+    # terasa langsung berpengaruh: pengunjung yang kembali mendapat
+    # halaman baru, bukan salinan lama dari cache-nya sendiri.
+    Cache-Control = "public, max-age=0, must-revalidate"
